@@ -1,0 +1,12 @@
+{
+  "name": "welfare-compass",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm --filter @welfare/apps-web dev",
+    "dev:api": "pnpm --filter @welfare/apps-api dev",
+    "dev": "pnpm dev:web & pnpm dev:api",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint"
+  }
+}
