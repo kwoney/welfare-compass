@@ -1,0 +1,98 @@
+// ✅ packages/db/prisma/schema.prisma
+// MVP 단계에서의 복지 매칭 서비스용 데이터 모델
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // ✅ Neon에서 받은 연결 문자열을 여기에 주입
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      UserRole @default(USER)
+
+  // ✅ 유저가 입력한 요약 프로필(복지 매칭 조건)
+  profile   UserProfile?
+
+  bookmarks Bookmark[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserProfile {
+  id         String  @id @default(cuid())
+  userId     String  @unique
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // ✅ 매칭에 쓰는 최소 핵심 필드들(필요 시 확장)
+  birthYear  Int?
+  regionSi   String?   // 예: "서울"
+  regionGu   String?   // 예: "강남구"
+  employment String?   // employed/unemployed/student/self-employed...
+  incomeBand String?   // 소득분위/구간
+  housing    String?   // 월세/전세/자가 등
+  household  String?   // 1인가구/신혼/다자녀 등
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model WelfareProgram {
+  id           String   @id @default(cuid())
+  programName  String
+  agency       String?   // 주관기관
+  categoryMain String?   // 주거/일자리/생활 등
+  categorySub  String?
+  summary      String?   @db.Text
+  content      String?   @db.Text
+  applyUrl     String?
+  sourceUrl    String?
+  tags         String[]  // 간단 검색용 태그
+
+  // ✅ “규칙(자격조건)”은 구조화해두면 매칭이 쉬워짐
+  rules        EligibilityRule[]
+
+  bookmarks    Bookmark[]
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([programName])
+  @@index([categoryMain])
+}
+
+model EligibilityRule {
+  id              String  @id @default(cuid())
+  programId        String
+  program          WelfareProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  // ✅ 규칙 타입(나이/지역/소득 등) + 값(단순 MVP)
+  ruleType         String   // e.g. "AGE_MIN", "AGE_MAX", "REGION_GU", "INCOME_BAND"
+  ruleValue        String   // e.g. "19", "34", "강남구", "중위소득 100% 이하"
+  // ✅ 규칙이 '필수'인지 '가산점'인지 구분해도 좋음
+  isRequired       Boolean  @default(true)
+}
+
+model Bookmark {
+  id         String @id @default(cuid())
+  userId     String
+  programId  String
+
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program    WelfareProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, programId])
+}
