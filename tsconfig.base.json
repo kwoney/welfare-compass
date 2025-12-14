@@ -10,7 +10,8 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
-      "@welfare/shared/*": ["packages/shared/src/*"]
+      "@welfare/shared/*": ["packages/shared/src/*"],
+      "@welfare/db/*": ["packages/db/*"]
     }
   }
 }
